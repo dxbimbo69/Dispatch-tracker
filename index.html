@@ -935,24 +935,30 @@ function loadScores(url) {
 }
 
 function normalizeRow(r) {
-  const rawScore = (r['Score'] || '').toString();
+  // Parse score like "100 / 100" or "85 / 100"
+  const rawScore = String(r['Score'] || '');
   let scorePct = 0;
-  const m = rawScore.match(/(\d+)\s*\/\s*(\d+)/);
-  if (m) { scorePct = Math.round(parseInt(m[1]) / parseInt(m[2]) * 100); }
-  else { scorePct = parseFloat(rawScore) || 0; }
+  const parts = rawScore.split('/');
+  if (parts.length === 2) {
+    const num = parseFloat(parts[0].trim());
+    const den = parseFloat(parts[1].trim());
+    if (den > 0) scorePct = Math.round(num / den * 100);
+  } else {
+    scorePct = parseFloat(rawScore) || 0;
+  }
   const correct   = parseInt(r['Correct']   || 0);
   const incorrect = parseInt(r['Incorrect'] || 0);
-  const status = (r['Pass / Fail'] || '').toString().trim();
+  const rawStatus = String(r['Pass / Fail'] || '').trim().toLowerCase();
   return {
     timestamp: r['Submitted At']     || '',
-    empId:     r['Employee ID']      || '',
+    empId:     String(r['Employee ID'] || ''),
     firstName: r['First Name']       || '',
     lastName:  r['Last Name']        || '',
     quiz:      r['Exam Name']        || '',
     score:     scorePct,
     earned:    correct,
     possible:  correct + incorrect,
-    status:    status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() === 'Pass' ? 'PASS' : 'FAIL',
+    status:    (rawStatus === 'pass' && scorePct >= 80) ? 'PASS' : (rawStatus === 'fail' || scorePct < 80) ? 'FAIL' : scorePct >= 80 ? 'PASS' : 'FAIL',
     missed:    r['Questions Missed'] || ''
   };
 }
