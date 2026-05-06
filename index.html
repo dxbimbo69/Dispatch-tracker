@@ -883,48 +883,77 @@ function showSetupError(msg) {
   el.style.display = 'block';
 }
 
-// ── LOAD SCORES ────────────────────────────────────────────────────
-async function loadScores(url) {
+// ── LOAD SCORES (JSONP to bypass CORS) ────────────────────────────
+function loadScores(url) {
   url = url || localStorage.getItem(STORAGE_KEY);
   if (!url) { showSetup(); return; }
 
-  try {
-    const res  = await fetch(url);
-    const data = await res.json();
+  // Remove any previous JSONP script tag
+  const old = document.getElementById('jsonp-script');
+  if (old) old.remove();
 
-    if (data.error) throw new Error(data.error);
-
-    allRows = (data.rows || []).map(normalizeRow);
-    document.getElementById('setup-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display    = 'block';
-    document.getElementById('refresh-btn').style.display = '';
-    document.getElementById('export-btn').style.display  = '';
-    document.getElementById('settings-btn').style.display = '';
-
-    populateQuizFilter();
-    applyFilters();
-    document.getElementById('last-updated').textContent =
-      'Updated ' + new Date().toLocaleTimeString();
-
-  } catch (err) {
-    showSetupError('Could not load data: ' + err.message +
-      '. Make sure the Web App is deployed with "Anyone" access.');
+  // Set a timeout in case the script never calls back
+  const timeout = setTimeout(() => {
+    showSetupError('Request timed out. Make sure the Web App is deployed with "Anyone" access.');
     document.getElementById('setup-screen').style.display = 'flex';
-  }
+  }, 10000);
+
+  // JSONP callback — Google Apps Script calls this with the data
+  window._bzCallback = function(data) {
+    clearTimeout(timeout);
+    try {
+      if (data.error) throw new Error(data.error);
+
+      allRows = (data.rows || []).map(normalizeRow);
+      document.getElementById('setup-screen').style.display = 'none';
+      document.getElementById('dashboard').style.display    = 'block';
+      document.getElementById('refresh-btn').style.display = '';
+      document.getElementById('export-btn').style.display  = '';
+      document.getElementById('settings-btn').style.display = '';
+
+      populateQuizFilter();
+      applyFilters();
+      document.getElementById('last-updated').textContent =
+        'Updated ' + new Date().toLocaleTimeString();
+
+    } catch(err) {
+      showSetupError('Could not load data: ' + err.message);
+      document.getElementById('setup-screen').style.display = 'flex';
+    }
+  };
+
+  // Inject script tag with callback param
+  const script = document.createElement('script');
+  script.id  = 'jsonp-script';
+  script.src = url + '?callback=_bzCallback';
+  script.onerror = () => {
+    clearTimeout(timeout);
+    showSetupError('Could not reach the Apps Script URL. Check the URL and try again.');
+    document.getElementById('setup-screen').style.display = 'flex';
+  };
+  document.body.appendChild(script);
 }
 
 function normalizeRow(r) {
+  const rawScore = (r['Score'] || '').toString();
+  let scorePct = 0;
+  const m = rawScore.match(/(\d+)\s*\/\s*(\d+)/);
+  if (m) { scorePct = Math.round(parseInt(m[1]) / parseInt(m[2]) * 100); }
+  else { scorePct = parseFloat(rawScore) || 0; }
+  const correct   = parseInt(r['Correct']   || 0);
+  const incorrect = parseInt(r['Incorrect'] || 0);
+  const status = (r['Pass / Fail'] || '').toString().trim();
   return {
-    timestamp: r['Timestamp']        || '',
+    timestamp: r['Submitted At']     || '',
     empId:     r['Employee ID']      || '',
     firstName: r['First Name']       || '',
     lastName:  r['Last Name']        || '',
-    quiz:      r['Quiz / Test Name'] || '',
-    score:     parseFloat(r['Score (%)']) || 0,
-    earned:    r['Points Earned']    || '',
-    possible:  r['Points Possible']  || '',
-    status:    r['Pass / Fail']      || '',
-    missed:    r['Missed Questions'] || ''
+    quiz:      r['Exam Name']        || '',
+    score:     scorePct,
+    earned:    correct,
+    possible:  correct + incorrect,
+    status:    status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() === 'Pass' ? 'PASS' : 'FAIL',
+    missed:    r['Questions Missed'] || ''
   };
 }
 
