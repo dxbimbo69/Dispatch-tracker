@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BZ Dispatch — Score Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy:    #0b1e3d;
+    --navy2:   #112549;
+    --blue:    #1a3a6b;
+    --accent:  #e8a020;
+    --accent2: #f0c060;
+    --green:   #2ecc71;
+    --red:     #e74c3c;
+    --muted:   #7a90b0;
+    --border:  #1e3560;
+    --text:    #dce8f5;
+    --text2:   #a0b8d8;
+    --card:    #0f2040;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--navy2);
+    border-bottom: 2px solid var(--accent);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .logo-badge {
+    background: var(--accent);
+    color: var(--navy);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    border-radius: 3px;
+  }
+
+  .logo-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .logo-sub {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 1px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  #last-updated {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--navy);
+  }
+  .btn-primary:hover { background: var(--accent2); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
+
+  /* ── SETUP SCREEN ── */
+  #setup-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 64px);
+    padding: 2rem;
+  }
+
+  .setup-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .setup-card h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.4rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .setup-card p {
+    color: var(--text2);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .setup-steps {
+    background: var(--navy2);
+    border-radius: 6px;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1.5rem;
+    counter-reset: steps;
+  }
+
+  .setup-steps li {
+    counter-increment: steps;
+    list-style: none;
+    padding: 0.4rem 0 0.4rem 2rem;
+    position: relative;
+    font-size: 0.88rem;
+    color: var(--text2);
+    line-height: 1.5;
+    border-bottom: 1px solid var(--border);
+  }
+  .setup-steps li:last-child { border-bottom: none; }
+
+  .setup-steps li::before {
+    content: counter(steps);
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--accent);
+    color: var(--navy);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .setup-steps li code {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    background: var(--blue);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent2);
+  }
+
+  .url-input-wrap {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .url-input-wrap input {
+    flex: 1;
+    background: var(--navy2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .url-input-wrap input:focus { border-color: var(--accent); }
+  .url-input-wrap input::placeholder { color: var(--muted); }
+
+  /* ── MAIN DASHBOARD ── */
+  #dashboard { display: none; padding: 2rem; max-width: 1400px; margin: 0 auto; }
+
+  /* ── STAT CARDS ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+  }
+
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.red::before   { background: var(--red); }
+
+  .stat-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .stat-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .stat-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
+
+  /* ── CONTROLS BAR ── */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .controls input[type="text"],
+  .controls select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.87rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .controls input[type="text"]:focus,
+  .controls select:focus { border-color: var(--accent); }
+
+  .controls input[type="text"] { width: 220px; }
+
+  .controls select option {
+    background: var(--navy2);
+  }
+
+  .spacer { flex: 1; }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .row-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    background: var(--navy2);
+    padding: 10px 14px;
+    text-align: left;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: color 0.15s;
+  }
+
+  thead th:hover { color: var(--text); }
+  thead th.sort-asc::after  { content: ' ↑'; color: var(--accent); }
+  thead th.sort-desc::after { content: ' ↓'; color: var(--accent); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+  tbody td {
+    padding: 11px 14px;
+    font-size: 0.87rem;
+    color: var(--text2);
+    vertical-align: middle;
+  }
+
+  .td-name {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .td-id {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .td-quiz { color: var(--text); font-size: 0.85rem; }
+
+  .td-score {
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 3px;
+  }
+
+  .badge-pass { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3); }
+  .badge-fail { background: rgba(231,76,60,0.15);  color: var(--red);   border: 1px solid rgba(231,76,60,0.3); }
+
+  .btn-detail {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Barlow', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-detail:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── QUIZ PASS RATE TABLE ── */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  @media (max-width: 860px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+  .pass-rate-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .pass-rate-card .table-header { border-bottom: 1px solid var(--border); }
+
+  .pr-table { width: 100%; border-collapse: collapse; }
+
+  .pr-table thead th {
+    background: var(--navy2);
+    padding: 8px 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+  }
+
+  .pr-table tbody tr { border-bottom: 1px solid var(--border); }
+  .pr-table tbody tr:last-child { border-bottom: none; }
+  .pr-table tbody td {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: var(--text2);
+  }
+
+  .pr-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pr-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .pr-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--green);
+    transition: width 0.4s;
+  }
+
+  .pr-bar-fill.low { background: var(--red); }
+  .pr-bar-fill.mid { background: var(--accent); }
+
+  .pr-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text);
+    width: 36px;
+    text-align: right;
+  }
+
+  /* ── STUDENT BREAKDOWN CARD ── */
+  .student-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .student-list { max-height: 320px; overflow-y: auto; }
+
+  .student-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 1.5rem;
+    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .student-row:last-child { border-bottom: none; }
+  .student-row:hover { background: rgba(255,255,255,0.03); }
+
+  .student-avatar {
+    width: 34px; height: 34px;
+    background: var(--blue);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .student-info { flex: 1; }
+  .student-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
+  .student-meta { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+
+  .student-score-col {
+    text-align: right;
+  }
+  .student-avg {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .student-attempts {
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  /* ── MISSED QUESTIONS MODAL ── */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5,15,35,0.85);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .modal-backdrop.open { display: flex; }
+
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    width: 100%;
+    max-width: 680px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  .modal-head {
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .modal-head h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .modal-head p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .modal-close {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .modal-close:hover { border-color: var(--red); color: var(--red); }
+
+  .modal-body { padding: 1.2rem 1.5rem; }
+
+  .missed-q {
+    background: rgba(231,76,60,0.05);
+    border: 1px solid rgba(231,76,60,0.2);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .missed-q-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+
+  .missed-q-text {
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 0.6rem;
+    line-height: 1.4;
+  }
+
+  .missed-answers {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .missed-answer {
+    font-size: 0.82rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .ans-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .ans-label.student { background: rgba(231,76,60,0.2); color: var(--red); }
+  .ans-label.correct { background: rgba(46,204,113,0.2); color: var(--green); }
+
+  /* ── EMPTY / LOADING ── */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+
+  .loading-dots::after {
+    content: '';
+    animation: dots 1.2s steps(4, end) infinite;
+  }
+
+  @keyframes dots {
+    0%   { content: ''; }
+    25%  { content: '.'; }
+    50%  { content: '..'; }
+    75%  { content: '...'; }
+    100% { content: ''; }
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--navy2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-badge">BZ</div>
+    <div>
+      <div class="logo-title">Dispatch Training — Score Tracker</div>
+      <div class="logo-sub">Breeze Airways · IOCC</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span id="last-updated"></span>
+    <button class="btn btn-ghost" id="refresh-btn" onclick="loadScores()" style="display:none">↻ Refresh</button>
+    <button class="btn btn-ghost" id="export-btn" onclick="exportCSV()" style="display:none">↓ CSV</button>
+    <button class="btn btn-ghost" id="settings-btn" onclick="showSetup()" style="display:none">⚙ Settings</button>
+  </div>
+</header>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <h2>Connect to Google Sheets</h2>
+    <p>Paste your Google Apps Script Web App URL below to pull live scores from your spreadsheet.</p>
+
+    <ol class="setup-steps">
+      <li>Open your Google Sheet → <code>Extensions → Apps Script</code></li>
+      <li>Paste the provided script, save, then click <code>Deploy → New deployment</code></li>
+      <li>Set type to <code>Web App</code>, access to <code>Anyone</code>, then deploy</li>
+      <li>Copy the Web App URL and paste it below</li>
+    </ol>
+
+    <div class="url-input-wrap">
+      <input type="text" id="script-url-input" placeholder="https://script.google.com/macros/s/.../exec" />
+      <button class="btn btn-primary" onclick="saveAndConnect()">Connect</button>
+    </div>
+    <p id="setup-error" style="color:var(--red);font-size:0.82rem;margin-top:0.75rem;display:none"></p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+
+  <!-- STAT CARDS -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Attempts</div>
+      <div class="stat-value" id="stat-total">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Unique Students</div>
+      <div class="stat-value" id="stat-students">—</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Overall Pass Rate</div>
+      <div class="stat-value" id="stat-pass">—</div>
+      <div class="stat-sub" id="stat-pass-sub"></div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Fail Rate</div>
+      <div class="stat-value" id="stat-fail">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Score</div>
+      <div class="stat-value" id="stat-avg">—</div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <input type="text" id="search-input" placeholder="Search student or quiz…" oninput="applyFilters()" />
+    <select id="filter-quiz" onchange="applyFilters()">
+      <option value="">All quizzes</option>
+    </select>
+    <select id="filter-status" onchange="applyFilters()">
+      <option value="">All statuses</option>
+      <option value="PASS">Pass</option>
+      <option value="FAIL">Fail</option>
+    </select>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- RESULTS TABLE -->
+  <div class="table-wrap">
+    <div class="table-header">
+      <span class="table-title">All Attempts</span>
+      <span class="row-count" id="row-count"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('name')">Student</th>
+          <th onclick="sortBy('id')">Emp ID</th>
+          <th onclick="sortBy('quiz')">Quiz / Test</th>
+          <th onclick="sortBy('score')">Score</th>
+          <th onclick="sortBy('status')">Status</th>
+          <th onclick="sortBy('date')">Date / Time</th>
+          <th>Missed Q's</th>
+        </tr>
+      </thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+
+  <!-- BOTTOM GRID: Pass Rates + Student Breakdown -->
+  <div class="bottom-grid">
+
+    <div class="pass-rate-card">
+      <div class="table-header">
+        <span class="table-title">Pass Rates by Quiz</span>
+      </div>
+      <table class="pr-table">
+        <thead>
+          <tr>
+            <th>Quiz / Test</th>
+            <th>Attempts</th>
+            <th>Pass Rate</th>
+          </tr>
+        </thead>
+        <tbody id="passrate-body"></tbody>
+      </table>
+    </div>
+
+    <div class="student-card">
+      <div class="table-header">
+        <span class="table-title">Students</span>
+      </div>
+      <div class="student-list" id="student-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MISSED QUESTIONS MODAL -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3 id="modal-title">Missed Questions</h3>
+        <p id="modal-meta"></p>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕ Close</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────
+let allRows      = [];
+let filteredRows = [];
+let sortCol      = 'date';
+let sortDir      = 'desc';
+
+const STORAGE_KEY = 'bz_tracker_script_url';
+
+// ── INIT ───────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    document.getElementById('script-url-input').value = saved;
+    loadScores(saved);
+  }
+});
+
+function saveAndConnect() {
+  const url = document.getElementById('script-url-input').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    showSetupError('Please enter a valid Google Apps Script URL.');
+    return;
+  }
+  localStorage.setItem(STORAGE_KEY, url);
+  loadScores(url);
+}
+
+function showSetup() {
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+}
+
+function showSetupError(msg) {
+  const el = document.getElementById('setup-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ── LOAD SCORES ────────────────────────────────────────────────────
+async function loadScores(url) {
+  url = url || localStorage.getItem(STORAGE_KEY);
+  if (!url) { showSetup(); return; }
+
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+
+    allRows = (data.rows || []).map(normalizeRow);
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display    = 'block';
+    document.getElementById('refresh-btn').style.display = '';
+    document.getElementById('export-btn').style.display  = '';
+    document.getElementById('settings-btn').style.display = '';
+
+    populateQuizFilter();
+    applyFilters();
+    document.getElementById('last-updated').textContent =
+      'Updated ' + new Date().toLocaleTimeString();
+
+  } catch (err) {
+    showSetupError('Could not load data: ' + err.message +
+      '. Make sure the Web App is deployed with "Anyone" access.');
+    document.getElementById('setup-screen').style.display = 'flex';
+  }
+}
+
+function normalizeRow(r) {
+  return {
+    timestamp: r['Timestamp']        || '',
+    empId:     r['Employee ID']      || '',
+    firstName: r['First Name']       || '',
+    lastName:  r['Last Name']        || '',
+    quiz:      r['Quiz / Test Name'] || '',
+    score:     parseFloat(r['Score (%)']) || 0,
+    earned:    r['Points Earned']    || '',
+    possible:  r['Points Possible']  || '',
+    status:    r['Pass / Fail']      || '',
+    missed:    r['Missed Questions'] || ''
+  };
+}
+
+// ── FILTERS ────────────────────────────────────────────────────────
+function populateQuizFilter() {
+  const quizzes = [...new Set(allRows.map(r => r.quiz))].sort();
+  const sel = document.getElementById('filter-quiz');
+  sel.innerHTML = '<option value="">All quizzes</option>';
+  quizzes.forEach(q => {
+    const o = document.createElement('option');
+    o.value = q; o.textContent = q;
+    sel.appendChild(o);
+  });
+}
+
+function applyFilters() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const quiz   = document.getElementById('filter-quiz').value;
+  const status = document.getElementById('filter-status').value;
+
+  filteredRows = allRows.filter(r => {
+    const name = (r.firstName + ' ' + r.lastName).toLowerCase();
+    if (search && !name.includes(search) && !r.quiz.toLowerCase().includes(search) && !r.empId.toLowerCase().includes(search)) return false;
+    if (quiz   && r.quiz !== quiz)     return false;
+    if (status && r.status !== status) return false;
+    return true;
+  });
+
+  sortRows();
+  renderStats();
+  renderTable();
+  renderPassRates();
+  renderStudentList();
+}
+
+// ── SORT ───────────────────────────────────────────────────────────
+function sortBy(col) {
+  if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortCol = col; sortDir = 'asc'; }
+  document.querySelectorAll('thead th').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+  });
+  // highlight current
+  sortRows();
+  renderTable();
+}
+
+function sortRows() {
+  filteredRows.sort((a, b) => {
+    let va, vb;
+    switch (sortCol) {
+      case 'name':   va = a.lastName;  vb = b.lastName; break;
+      case 'id':     va = a.empId;     vb = b.empId;    break;
+      case 'quiz':   va = a.quiz;      vb = b.quiz;     break;
+      case 'score':  va = a.score;     vb = b.score;    break;
+      case 'status': va = a.status;    vb = b.status;   break;
+      default:       va = a.timestamp; vb = b.timestamp;
+    }
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ?  1 : -1;
+    return 0;
+  });
+}
+
+// ── RENDER STATS ───────────────────────────────────────────────────
+function renderStats() {
+  const rows = filteredRows;
+  const total    = rows.length;
+  const students = new Set(rows.map(r => r.empId)).size;
+  const passes   = rows.filter(r => r.status === 'PASS').length;
+  const fails    = total - passes;
+  const passRate = total ? Math.round(passes / total * 100) : 0;
+  const failRate = total ? Math.round(fails  / total * 100) : 0;
+  const avgScore = total ? (rows.reduce((s, r) => s + r.score, 0) / total).toFixed(1) : 0;
+
+  document.getElementById('stat-total').textContent    = total;
+  document.getElementById('stat-students').textContent = students;
+  document.getElementById('stat-pass').textContent     = passRate + '%';
+  document.getElementById('stat-pass-sub').textContent = passes + ' of ' + total + ' attempts';
+  document.getElementById('stat-fail').textContent     = failRate + '%';
+  document.getElementById('stat-avg').textContent      = avgScore + '%';
+}
+
+// ── RENDER TABLE ───────────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('results-body');
+  document.getElementById('row-count').textContent = filteredRows.length + ' records';
+
+  if (!filteredRows.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">📋</div>No records found.</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filteredRows.map((r, i) => {
+    const name = r.firstName + ' ' + r.lastName;
+    const scoreColor = r.score >= 80 ? 'var(--green)' : r.score >= 70 ? 'var(--accent)' : 'var(--red)';
+    const hasMissed = r.missed && r.missed.trim().length > 0;
+    return `
+      <tr>
+        <td class="td-name">${name}</td>
+        <td class="td-id">${r.empId}</td>
+        <td class="td-quiz">${r.quiz}</td>
+        <td class="td-score" style="color:${scoreColor}">${r.score}%</td>
+        <td><span class="badge ${r.status === 'PASS' ? 'badge-pass' : 'badge-fail'}">${r.status}</span></td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted)">${r.timestamp}</td>
+        <td>${hasMissed ? `<button class="btn-detail" onclick="openModal(${i})">View</button>` : '<span style="color:var(--muted);font-size:0.78rem">—</span>'}</td>
+      </tr>`;
+  }).join('');
+}
+
+// ── RENDER PASS RATES ──────────────────────────────────────────────
+function renderPassRates() {
+  const byQuiz = {};
+  filteredRows.forEach(r => {
+    if (!byQuiz[r.quiz]) byQuiz[r.quiz] = { total: 0, pass: 0 };
+    byQuiz[r.quiz].total++;
+    if (r.status === 'PASS') byQuiz[r.quiz].pass++;
+  });
+
+  const tbody = document.getElementById('passrate-body');
+  const entries = Object.entries(byQuiz).sort((a, b) => b[1].total - a[1].total);
+
+  if (!entries.length) {
+    tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state" style="padding:1.5rem">No data.</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = entries.map(([quiz, d]) => {
+    const pct = Math.round(d.pass / d.total * 100);
+    const cls = pct >= 80 ? '' : pct >= 60 ? 'mid' : 'low';
+    return `
+      <tr>
+        <td style="font-size:0.82rem;color:var(--text)">${quiz}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--muted)">${d.total}</td>
+        <td>
+          <div class="pr-bar-wrap">
+            <div class="pr-bar"><div class="pr-bar-fill ${cls}" style="width:${pct}%"></div></div>
+            <span class="pr-pct">${pct}%</span>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ── RENDER STUDENT LIST ────────────────────────────────────────────
+function renderStudentList() {
+  const byStudent = {};
+  filteredRows.forEach(r => {
+    const key = r.empId || (r.firstName + r.lastName);
+    if (!byStudent[key]) byStudent[key] = { firstName: r.firstName, lastName: r.lastName, empId: r.empId, scores: [], passes: 0 };
+    byStudent[key].scores.push(r.score);
+    if (r.status === 'PASS') byStudent[key].passes++;
+  });
+
+  const el = document.getElementById('student-list');
+  const students = Object.values(byStudent).sort((a, b) => a.lastName.localeCompare(b.lastName));
+
+  if (!students.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:2rem">No students found.</div>`;
+    return;
+  }
+
+  el.innerHTML = students.map(s => {
+    const avg = (s.scores.reduce((a, b) => a + b, 0) / s.scores.length).toFixed(1);
+    const initials = (s.firstName[0] || '') + (s.lastName[0] || '');
+    return `
+      <div class="student-row">
+        <div class="student-avatar">${initials.toUpperCase()}</div>
+        <div class="student-info">
+          <div class="student-name">${s.firstName} ${s.lastName}</div>
+          <div class="student-meta">${s.empId} · ${s.passes}/${s.scores.length} passed</div>
+        </div>
+        <div class="student-score-col">
+          <div class="student-avg">${avg}%</div>
+          <div class="student-attempts">${s.scores.length} attempt${s.scores.length !== 1 ? 's' : ''}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── MISSED QUESTIONS MODAL ─────────────────────────────────────────
+function openModal(idx) {
+  const r = filteredRows[idx];
+  document.getElementById('modal-title').textContent =
+    r.firstName + ' ' + r.lastName + ' — Missed Questions';
+  document.getElementById('modal-meta').textContent =
+    r.quiz + '  ·  ' + r.score + '%  ·  ' + r.timestamp;
+
+  const body = document.getElementById('modal-body');
+
+  if (!r.missed || !r.missed.trim()) {
+    body.innerHTML = '<p style="color:var(--muted);font-size:0.9rem">No missed questions recorded.</p>';
+  } else {
+    // Parse "Q3: question text (Your answer: X | Correct: Y)" format
+    const parts = r.missed.split(' | ').filter(p => p.trim());
+    body.innerHTML = parts.map(part => {
+      const qMatch = part.match(/^Q(\d+):\s*(.+?)\s*\(Your answer:\s*(.+?)\s*\|\s*Correct:\s*(.+?)\)$/);
+      if (qMatch) {
+        return `
+          <div class="missed-q">
+            <div class="missed-q-num">Question ${qMatch[1]}</div>
+            <div class="missed-q-text">${qMatch[2]}</div>
+            <div class="missed-answers">
+              <div class="missed-answer"><span class="ans-label student">Student</span> ${qMatch[3]}</div>
+              <div class="missed-answer"><span class="ans-label correct">Correct</span> ${qMatch[4]}</div>
+            </div>
+          </div>`;
+      }
+      return `<div class="missed-q"><div class="missed-q-text">${part}</div></div>`;
+    }).join('');
+  }
+
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
+
+// ── CSV EXPORT ─────────────────────────────────────────────────────
+function exportCSV() {
+  const headers = ['Timestamp','Employee ID','First Name','Last Name','Quiz/Test','Score (%)','Pass/Fail','Missed Questions'];
+  const rows = filteredRows.map(r => [
+    r.timestamp, r.empId, r.firstName, r.lastName,
+    r.quiz, r.score, r.status, (r.missed || '').replace(/,/g, ';')
+  ]);
+
+  const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'bz-dispatch-scores-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+</script>
+</body>
+</html>
